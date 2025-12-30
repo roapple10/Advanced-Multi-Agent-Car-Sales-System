@@ -57,7 +57,7 @@ CarBot Pro demonstrates a sophisticated multi-agent orchestration pattern using 
 
 ```bash
 # Clone the repository
-git clone https://github.com/LIDR-academy/car-salesman-agents.git
+git clone https://github.com/roapple10/Advanced-Multi-Agent-Car-Sales-System.git
 cd car-salesman-agents
 
 # Create and activate virtual environment
