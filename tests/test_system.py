@@ -4,6 +4,13 @@ Test script para verificar que el sistema multiagente funcione correctamente
 """
 
 import os
+import sys
+
+# Add src directory to path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+
+import os
+
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -40,10 +47,10 @@ def test_system():
         return False
     
     # Test 4: Initialize multi-agent system (only if API key is available)
-    openai_key = os.getenv('OPENAI_API_KEY')
-    if openai_key and openai_key.startswith('sk-'):
+    databricks_token = os.getenv('DATABRICKS_TOKEN')
+    if databricks_token and databricks_token.startswith('dapi'):
         try:
-            agent_system = get_advanced_multi_agent_system(openai_key)
+            agent_system = get_advanced_multi_agent_system(databricks_token)
             print("✅ Test 4: Sistema multiagente inicializado")
             
             # Test 5: Simple interaction
@@ -59,8 +66,8 @@ def test_system():
             print(f"❌ Test 4: Error inicializando sistema: {e}")
             return False
     else:
-        print("⚠️  Test 4: Saltado - No hay OpenAI API Key válida")
-        print("⚠️  Test 5: Saltado - Requiere API Key")
+        print("⚠️  Test 4: Saltado - No hay Databricks Token válido")
+        print("⚠️  Test 5: Saltado - Requiere Databricks Token")
     
     print("\n🎉 ¡Todos los tests completados exitosamente!")
     return True

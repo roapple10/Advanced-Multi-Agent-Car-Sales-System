@@ -11,7 +11,9 @@ import json
 from dotenv import load_dotenv
 
 # Load environment variables
-load_dotenv()
+
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+load_dotenv(os.path.join(project_root, ".env"))
 
 # Import systems
 try:
@@ -264,9 +266,9 @@ if not st.session_state.get('system_initialized', False):
         ### What makes this system special?
         
         **Multi-Agent Orchestrated Architecture:**
-        - Eddy - Inventory Manager; analyzes your query against our inventory (databricks-gpt-5-mini)
-        - Maria - Technical expert; research specifications and market data (databricks-gpt-5)
-        - Carlos - Sales lead; synthesizes all information into a personal response (databricks-gpt-5-1)
+        - Eddy - Inventory Manager: analyzes your query against our inventory (databricks-gpt-5-mini)
+        - Maria - Technical expert: research specifications and market data (databricks-gpt-5)
+        - Carlos - Sales lead: synthesizes all information into a personal response (databricks-gpt-5-1)
         
         **🔧 Advanced Capabilities:**
         - ✅ Structured graph-based agent coordination
@@ -309,13 +311,13 @@ else:
         """,
         unsafe_allow_html=True
         )
-        st.image("picture/landing_page.png", width=500)
+        st.image(os.path.join(project_root, "picture/landing_page.png"), width=500)
         st.subheader("💬 Chat with CarBot Pro")
         
         if "messages" not in st.session_state:
             st.session_state.messages = []
             welcome_msg = """Hello! I'm **Carlos**, your personal AI-powered car salesperson. 
-            I work together with **Maria** (our research specialist) and **Eddy** (our Manager) to offer you the best service.
+I have 15 years of experience helping families find the perfect vehicle. I work together with **Maria** (our research specialist) and **Eddy** (our Manager) to offer you the best service.
 How can I help you today? Are you looking for something specific, or would you like me to recommend options based on your needs?
 💡 *Tip: You can tell me things like "I'm looking for a safe car for my family" or "I need a red sedan less than 2 years old"*"""
             st.session_state.messages.append({
@@ -346,12 +348,24 @@ How can I help you today? Are you looking for something specific, or would you l
                                 "role": "assistant", "content": carlos_response,
                                 "timestamp": datetime.now(), "agent": "Carlos"
                             })
-                            if "ha sido reservado exitosamente" in carlos_response or \
-                               "proceso de compra ha concluido" in carlos_response:
+                            # if "ha sido reservado exitosamente" in carlos_response or \
+                            #    "proceso de compra ha concluido" in carlos_response:
+                            #     st.session_state.demo_concluded = True
+                            #     if hasattr(st.session_state.agent_system, 'inventory_manager'):
+                            #         st.session_state.agent_system.inventory_manager.load_inventory()
+                            #     st.rerun() 
+
+                            # Check if the reservation was successful or the purchase process concluded
+                            success_phrases = ["has been successfully reserved", "purchase process has concluded"]
+
+                            if any(phrase in carlos_response.lower() for phrase in success_phrases):
                                 st.session_state.demo_concluded = True
+                                
+                                # Reload inventory if the manager is present in the agent system
                                 if hasattr(st.session_state.agent_system, 'inventory_manager'):
                                     st.session_state.agent_system.inventory_manager.load_inventory()
-                                st.rerun() 
+                                
+                                st.rerun()
                         except Exception as e:
                             st.error(f"Error processing input: {e}")
                             st.session_state.messages.append({"role": "assistant", "content": f"Sorry, an internal error occurred: {e}"})

@@ -1,0 +1,86 @@
+{
+  "demo_title": "CarBot Pro - Advanced Multi-Agent System",
+  "presenter": "Eduardo Hilario, CTO IA For Transport",
+  "duration": "30 minutes",
+  "sections": {
+    "1_demo": {
+      "title": "Live Demonstration (8-10 min)",
+      "prompts": [
+        {
+          "step": 1,
+          "role": "Customer",
+          "prompt": "Hello, I'm looking for a car",
+          "expected": "Carlos greets and builds rapport"
+        },
+        {
+          "step": 2,
+          "role": "Customer",
+          "prompt": "I need a bigger and safer car because we had a baby",
+          "expected": "Carlos updates profile and shows understanding"
+        },
+        {
+          "step": 3,
+          "role": "Customer",
+          "prompt": "I want a red sedan that's no more than 2 years old",
+          "expected": "Carlos consults manager and searches inventory"
+        },
+        {
+          "step": 4,
+          "role": "Customer",
+          "prompt": "I'm interested in BMWs",
+          "expected": "Carlos refines search and presents options"
+        },
+        {
+          "step": 5,
+          "role": "Customer",
+          "prompt": "What safety features does it have for babies?",
+          "expected": "Carlos consults Maria for research"
+        },
+        {
+          "step": 6,
+          "role": "Customer",
+          "prompt": "What trunk space does the BMW X3 have?",
+          "expected": "Maria provides specific data"
+        },
+        {
+          "step": 7,
+          "role": "Customer",
+          "prompt": "What's the price of the black BMW X3?",
+          "expected": "Carlos consults manager for price"
+        },
+        {
+          "step": 8,
+          "role": "Customer",
+          "prompt": "Can you offer any discount?",
+          "expected": "Negotiation between Carlos and manager"
+        },
+        {
+          "step": 9,
+          "role": "Customer",
+          "prompt": "I'll take it",
+          "expected": "Carlos finalizes sale and updates inventory"
+        }
+      ]
+    },
+    "2_code_review": {
+      "title": "Code Review (20-22 min)",
+      "topics": [
+        "Multi-agent architecture",
+        "Intelligent inventory management",
+        "Inter-agent communication system",
+        "Real-time logs and analytics",
+        "External API integration",
+        "State and memory management"
+      ]
+    }
+  },
+  "key_features": [
+    "Multi-agent system with specialized roles",
+    "Intelligent search in enhanced inventory",
+    "Real-time web research",
+    "Automatic negotiation between agents",
+    "Dynamic customer profiling",
+    "Detailed logs and analytics",
+    "Modern interface with Streamlit"
+  ]
+}

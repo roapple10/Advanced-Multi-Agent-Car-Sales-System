@@ -3,11 +3,11 @@
 CarBot Pro - Advanced Multi-Agent System Quick Setup
 ====================================================
 
-Script de configuración rápida para el sistema multiagente avanzado de venta de coches.
-Configura el entorno, instala dependencias y prepara el sistema para la demo.
+Quick setup script for the advanced multi-agent car sales system.
+Configures the environment, installs dependencies and prepares the system for the demo.
 
-Autor: Eduardo Hilario, CTO IA For Transport
-Para: AI Agents Day Demo
+Author: Eduardo Hilario, CTO IA For Transport
+For: AI Agents Day Demo
 """
 
 import os
@@ -22,18 +22,18 @@ def print_header():
     print("=" * 70)
     print("🚗 CarBot Pro - Advanced Multi-Agent System Setup")
     print("=" * 70)
-    print("Demo para AI Agents Day")
-    print("Autor: Eduardo Hilario, CTO IA For Transport")
+    print("Demo for AI Agents Day")
+    print("Author: Eduardo Hilario, CTO IA For Transport")
     print("=" * 70)
     print()
 
 def check_python_version():
     """Check if Python version is compatible"""
-    print("🐍 Verificando versión de Python...")
+    print("🐍 Checking Python version...")
     
     if sys.version_info < (3, 8):
-        print("❌ Error: Se requiere Python 3.8 o superior")
-        print(f"   Versión actual: {sys.version}")
+        print("❌ Error: Python 3.8 or higher is required")
+        print(f"   Current version: {sys.version}")
         return False
     
     print(f"✅ Python {sys.version.split()[0]} - Compatible")
@@ -41,27 +41,27 @@ def check_python_version():
 
 def create_virtual_environment():
     """Create and activate virtual environment"""
-    print("\n🔧 Configurando entorno virtual...")
+    print("\n🔧 Setting up virtual environment...")
     
     venv_path = Path(".venv")
     
     if venv_path.exists():
-        print("⚠️  Entorno virtual existente encontrado")
-        response = input("¿Deseas recrearlo? (y/N): ").lower().strip()
+        print("⚠️  Existing virtual environment found")
+        response = input("Do you want to recreate it? (y/N): ").lower().strip()
         if response == 'y':
-            print("🗑️  Eliminando entorno virtual existente...")
+            print("🗑️  Removing existing virtual environment...")
             shutil.rmtree(venv_path)
         else:
-            print("✅ Usando entorno virtual existente")
+            print("✅ Using existing virtual environment")
             return True
     
     try:
-        print("📦 Creando nuevo entorno virtual...")
+        print("📦 Creating new virtual environment...")
         subprocess.run([sys.executable, "-m", "venv", ".venv"], check=True)
-        print("✅ Entorno virtual creado exitosamente")
+        print("✅ Virtual environment created successfully")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"❌ Error creando entorno virtual: {e}")
+        print(f"❌ Error creating virtual environment: {e}")
         return False
 
 def get_pip_command():
@@ -73,102 +73,106 @@ def get_pip_command():
 
 def install_dependencies():
     """Install required dependencies"""
-    print("\n📦 Instalando dependencias...")
+    print("\n📦 Installing dependencies...")
     
     pip_cmd = get_pip_command()
     
     try:
         # Upgrade pip first
-        print("🔄 Actualizando pip...")
+        print("🔄 Updating pip...")
         subprocess.run(pip_cmd + ["install", "--upgrade", "pip"], check=True)
         
         # Install requirements
-        print("📥 Instalando dependencias del proyecto...")
+        print("📥 Installing project dependencies...")
         subprocess.run(pip_cmd + ["install", "-r", "requirements.txt"], check=True)
         
-        print("✅ Dependencias instaladas exitosamente")
+        print("✅ Dependencies installed successfully")
         return True
         
     except subprocess.CalledProcessError as e:
-        print(f"❌ Error instalando dependencias: {e}")
+        print(f"❌ Error installing dependencies: {e}")
         return False
 
 def setup_environment_file():
     """Setup environment configuration file"""
-    print("\n🔑 Configurando variables de entorno...")
+    print("\n🔑 Setting up environment variables...")
     
     env_file = Path(".env")
     config_file = Path("config.env")
     
     if env_file.exists():
-        print("⚠️  Archivo .env existente encontrado")
-        response = input("¿Deseas sobrescribirlo? (y/N): ").lower().strip()
+        print("⚠️  Existing .env file found")
+        response = input("Do you want to overwrite it? (y/N): ").lower().strip()
         if response != 'y':
-            print("✅ Manteniendo configuración existente")
+            print("✅ Keeping existing configuration")
             return True
     
     if config_file.exists():
-        print("📋 Copiando configuración desde config.env...")
+        print("📋 Copying configuration from config.env...")
         shutil.copy(config_file, env_file)
     else:
-        print("📝 Creando archivo .env...")
+        print("📝 Creating .env file...")
         env_content = """# CarBot Pro - API Keys Configuration
-# Añade tus claves reales aquí
+# Add your real keys here
 
-# REQUERIDA: OpenAI API Key para los modelos de lenguaje
-OPENAI_API_KEY=sk-your_openai_api_key_here
+# REQUIRED: Databricks Token for language models
+# How to get your Databricks token: https://docs.databricks.com/en/dev-tools/auth/pat.html
+DATABRICKS_TOKEN=your_databricks_token_here
 
-# OPCIONAL: SerpAPI Key para búsqueda web en tiempo real
+# Databricks serving endpoint base URL
+DATABRICKS_BASE_URL=your_databricks_base_url_here
+
+# OPTIONAL: SerpAPI Key for real-time web search
 SERPAPI_API_KEY=your_serpapi_key_here
 
-# Configuración de la base de datos
+# Database configuration
 INVENTORY_PATH=data/enhanced_inventory.csv
 
-# Configuración del sistema
+# System configuration
 DEBUG_MODE=true
 LOG_LEVEL=INFO
 """
         with open(env_file, 'w', encoding='utf-8') as f:
             f.write(env_content)
     
-    print("✅ Archivo .env configurado")
-    print("⚠️  IMPORTANTE: Edita el archivo .env con tus claves API reales")
+    print("✅ .env file configured")
+    print("⚠️  IMPORTANT: Edit the .env file with your real API keys")
     return True
 
 def verify_data_files():
     """Verify that data files exist"""
-    print("\n📊 Verificando archivos de datos...")
+    print("\n📊 Checking data files...")
     
     data_dir = Path("data")
     enhanced_inventory = data_dir / "enhanced_inventory.csv"
     
     if not data_dir.exists():
-        print("📁 Creando directorio de datos...")
+        print("📁 Creating data directory...")
         data_dir.mkdir()
     
     if enhanced_inventory.exists():
-        print("✅ Inventario enriquecido encontrado")
+        print("✅ Enhanced inventory found")
         # Check file size
         file_size = enhanced_inventory.stat().st_size
         if file_size > 1000:  # At least 1KB
-            print(f"✅ Archivo de inventario válido ({file_size} bytes)")
+            print(f"✅ Valid inventory file ({file_size} bytes)")
         else:
-            print("⚠️  Archivo de inventario parece estar vacío")
+            print("⚠️  Inventory file appears to be empty")
     else:
-        print("❌ Archivo de inventario enriquecido no encontrado")
-        print("   Se requiere: data/enhanced_inventory.csv")
+        print("❌ Enhanced inventory file not found")
+        print("   Required: data/enhanced_inventory.csv")
         return False
     
     return True
 
 def verify_system_files():
     """Verify that all system files exist"""
-    print("\n🔍 Verificando archivos del sistema...")
+    print("\n🔍 Checking system files...")
     
     required_files = [
-        "enhanced_app.py",
-        "advanced_multi_agent_system.py",
-        "enhanced_inventory_manager.py",
+        "src/enhanced_app.py",
+        "src/advanced_multi_agent_system.py",
+        "src/enhanced_inventory_manager.py",
         "requirements.txt"
     ]
     
@@ -180,143 +184,144 @@ def verify_system_files():
             print(f"✅ {file_path}")
     
     if missing_files:
-        print(f"❌ Archivos faltantes: {', '.join(missing_files)}")
+        print(f"❌ Missing files: {', '.join(missing_files)}")
         return False
     
-    print("✅ Todos los archivos del sistema están presentes")
+    print("✅ All system files are present")
     return True
 
 def create_demo_script():
     """Create demo script file"""
-    print("\n🎬 Creando guión de demo...")
+    print("\n🎬 Creating demo script...")
     
     demo_script = {
-        "demo_title": "CarBot Pro - Sistema Multiagente Avanzado",
+        "demo_title": "CarBot Pro - Advanced Multi-Agent System",
         "presenter": "Eduardo Hilario, CTO IA For Transport",
-        "duration": "30 minutos",
+        "duration": "30 minutes",
         "sections": {
             "1_demo": {
-                "title": "Demostración en Vivo (8-10 min)",
+                "title": "Live Demonstration (8-10 min)",
                 "prompts": [
                     {
                         "step": 1,
-                        "role": "Cliente",
-                        "prompt": "Hola, estoy buscando un coche",
-                        "expected": "Saludo de Carlos y construcción de rapport"
+                        "role": "Customer",
+                        "prompt": "Hello, I'm looking for a car",
+                        "expected": "Carlos greets and builds rapport"
                     },
                     {
                         "step": 2,
-                        "role": "Cliente", 
-                        "prompt": "Necesito un coche más grande y seguro porque hemos tenido un bebé",
-                        "expected": "Carlos actualiza perfil y muestra comprensión"
+                        "role": "Customer", 
+                        "prompt": "I need a bigger and safer car because we had a baby",
+                        "expected": "Carlos updates profile and shows understanding"
                     },
                     {
                         "step": 3,
-                        "role": "Cliente",
-                        "prompt": "Quiero un sedan rojo que no tenga más de 2 años",
-                        "expected": "Carlos consulta al manager y busca en inventario"
+                        "role": "Customer",
+                        "prompt": "I want a red sedan that's no more than 2 years old",
+                        "expected": "Carlos consults manager and searches inventory"
                     },
                     {
                         "step": 4,
-                        "role": "Cliente",
-                        "prompt": "Me interesan los BMW",
-                        "expected": "Carlos refina búsqueda y presenta opciones"
+                        "role": "Customer",
+                        "prompt": "I'm interested in BMWs",
+                        "expected": "Carlos refines search and presents options"
                     },
                     {
                         "step": 5,
-                        "role": "Cliente",
-                        "prompt": "¿Qué características de seguridad tiene para bebés?",
-                        "expected": "Carlos consulta a María para investigación"
+                        "role": "Customer",
+                        "prompt": "What safety features does it have for babies?",
+                        "expected": "Carlos consults Maria for research"
                     },
                     {
                         "step": 6,
-                        "role": "Cliente",
-                        "prompt": "¿Qué espacio de maletero tiene el BMW X3?",
-                        "expected": "María proporciona datos específicos"
+                        "role": "Customer",
+                        "prompt": "What trunk space does the BMW X3 have?",
+                        "expected": "Maria provides specific data"
                     },
                     {
                         "step": 7,
-                        "role": "Cliente",
-                        "prompt": "¿Cuál es el precio del BMW X3 negro?",
-                        "expected": "Carlos consulta al manager para precio"
+                        "role": "Customer",
+                        "prompt": "What's the price of the black BMW X3?",
+                        "expected": "Carlos consults manager for price"
                     },
                     {
                         "step": 8,
-                        "role": "Cliente",
-                        "prompt": "¿Pueden hacer algún descuento?",
-                        "expected": "Negociación entre Carlos y manager"
+                        "role": "Customer",
+                        "prompt": "Can you offer any discount?",
+                        "expected": "Negotiation between Carlos and manager"
                     },
                     {
                         "step": 9,
-                        "role": "Cliente",
-                        "prompt": "Me lo quedo",
-                        "expected": "Carlos finaliza venta y actualiza inventario"
+                        "role": "Customer",
+                        "prompt": "I'll take it",
+                        "expected": "Carlos finalizes sale and updates inventory"
                     }
                 ]
             },
             "2_code_review": {
-                "title": "Revisión de Código (20-22 min)",
+                "title": "Code Review (20-22 min)",
                 "topics": [
-                    "Arquitectura multiagente",
-                    "Gestión de inventario inteligente",
-                    "Sistema de comunicación entre agentes",
-                    "Logs y analytics en tiempo real",
-                    "Integración con APIs externas",
-                    "Manejo de estados y memoria"
+                    "Multi-agent architecture",
+                    "Intelligent inventory management",
+                    "Inter-agent communication system",
+                    "Real-time logs and analytics",
+                    "External API integration",
+                    "State and memory management"
                 ]
             }
         },
         "key_features": [
-            "Sistema multiagente con roles especializados",
-            "Búsqueda inteligente en inventario enriquecido",
-            "Investigación web en tiempo real",
-            "Negociación automática entre agentes",
-            "Perfilado dinámico de clientes",
-            "Logs detallados y analytics",
-            "Interfaz moderna con Streamlit"
+            "Multi-agent system with specialized roles",
+            "Intelligent search in enhanced inventory",
+            "Real-time web research",
+            "Automatic negotiation between agents",
+            "Dynamic customer profiling",
+            "Detailed logs and analytics",
+            "Modern interface with Streamlit"
         ]
     }
     
     with open("demo_script_advanced.json", 'w', encoding='utf-8') as f:
         json.dump(demo_script, f, indent=2, ensure_ascii=False)
     
-    print("✅ Guión de demo creado: demo_script_advanced.json")
+    print("✅ Demo script created: demo_script_advanced.json")
 
 def print_next_steps():
     """Print next steps for the user"""
     print("\n" + "=" * 70)
-    print("🎉 ¡CONFIGURACIÓN COMPLETADA EXITOSAMENTE!")
+    print("🎉 SETUP COMPLETED SUCCESSFULLY!")
     print("=" * 70)
     print()
-    print("📋 PRÓXIMOS PASOS:")
+    print("📋 NEXT STEPS:")
     print()
-    print("1. 🔑 CONFIGURAR API KEYS:")
-    print("   - Edita el archivo .env")
-    print("   - Añade tu OpenAI API Key (REQUERIDA)")
-    print("   - Añade tu SerpAPI Key (OPCIONAL)")
+    print("1. 🔑 CONFIGURE API KEYS:")
+    print("   - Edit the .env file")
+    print("   - Add your Databricks Token (REQUIRED)")
+    print("   - Add your Databricks Base URL (if different from default)")
+    print("   - Add your SerpAPI Key (OPTIONAL)")
     print()
-    print("2. 🚀 EJECUTAR LA APLICACIÓN:")
+    print("2. 🚀 RUN THE APPLICATION:")
     
     if os.name == 'nt':  # Windows
         print("   .venv\\Scripts\\activate")
-        print("   streamlit run enhanced_app.py")
+        print("   streamlit run src/enhanced_app.py")
     else:  # Unix/Linux/macOS
         print("   source .venv/bin/activate")
-        print("   streamlit run enhanced_app.py")
+        print("   streamlit run src/enhanced_app.py")
     
     print()
-    print("3. 🎬 PREPARAR DEMO:")
-    print("   - Revisa demo_script_advanced.json")
-    print("   - Practica los prompts sugeridos")
-    print("   - Verifica que todos los agentes respondan")
+    print("3. 🎬 PREPARE DEMO:")
+    print("   - Review demo_script_advanced.json")
+    print("   - Practice the suggested prompts")
+    print("   - Verify that all agents respond")
     print()
-    print("4. 🔧 MODO DEBUG:")
-    print("   - Activa logs detallados en la interfaz")
-    print("   - Monitorea comunicaciones entre agentes")
-    print("   - Verifica analytics en tiempo real")
+    print("4. 🔧 DEBUG MODE:")
+    print("   - Enable detailed logs in the interface")
+    print("   - Monitor inter-agent communications")
+    print("   - Verify real-time analytics")
     print()
     print("=" * 70)
-    print("🎯 ¡LISTO PARA LA DEMO DE AI AGENTS DAY!")
+    print("🎯 READY FOR AI AGENTS DAY DEMO!")
     print("=" * 70)
 
 def main():

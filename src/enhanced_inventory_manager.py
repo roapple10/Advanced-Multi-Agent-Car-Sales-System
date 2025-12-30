@@ -6,6 +6,7 @@ import re
 from datetime import datetime
 import logging
 from dataclasses import dataclass
+import os
 from enum import Enum
 
 # Configure logging
@@ -49,8 +50,13 @@ class CarSearchResult:
 class EnhancedInventoryManager:
     """Advanced inventory management system with intelligent search capabilities"""
     
-    def __init__(self, inventory_path: str = "data/enhanced_inventory.csv"):
-        self.inventory_path = inventory_path
+    def __init__(self, inventory_path: Optional[str] = None):
+        if inventory_path is None:
+            # Default to ../data/enhanced_inventory.csv relative to this file
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            self.inventory_path = os.path.join(current_dir, "..", "data", "enhanced_inventory.csv")
+        else:
+            self.inventory_path = inventory_path
         self.inventory_df = None
         self.search_history = []
         self.load_inventory()
@@ -59,7 +65,25 @@ class EnhancedInventoryManager:
         """Load inventory with enhanced error handling and validation"""
         try:
             logger.info(f"Loading enhanced inventory from: {self.inventory_path}")
-            self.inventory_df = pd.read_csv(self.inventory_path)
+            df = pd.read_csv(self.inventory_path)
+            
+            # 1. Aggressive Normalization of column names
+            # Handles 'Year' -> 'year', 'Body Style' -> 'body_style', 'Trunk Space (L)' -> 'trunk_space_l'
+            def normalize_col(c):
+                c = c.lower()
+                c = re.sub(r'[^a-z0-9]', '_', c)
+                c = re.sub(r'_+', '_', c)
+                return c.strip('_')
+                
+            df.columns = [normalize_col(col) for col in df.columns]
+            
+            # 2. Map specific user-friendly names to internal names
+            column_mapping = {
+                'body_style': 'body_styles',
+                'trunk_space_l': 'trunk_space_liters',
+                'trunk_space': 'trunk_space_liters'
+            }
+            df = df.rename(columns=column_mapping)
             
             # Validate required columns
             required_columns = [
@@ -68,29 +92,31 @@ class EnhancedInventoryManager:
                 'trunk_space_liters', 'features', 'condition', 'location', 'vin'
             ]
             
-            missing_columns = [col for col in required_columns if col not in self.inventory_df.columns]
+            missing_columns = [col for col in required_columns if col not in df.columns]
             if missing_columns:
                 logger.error(f"Missing required columns: {missing_columns}")
+                logger.error(f"Available columns: {df.columns.tolist()}")
                 self.inventory_df = None # Ensure inventory is not used if malformed
                 return False
             
             # Add status column if it doesn't exist
-            if 'status' not in self.inventory_df.columns:
-                self.inventory_df['status'] = 'Available'
+            if 'status' not in df.columns:
+                df['status'] = 'Available'
             else:
                 # Ensure existing status values are standardized, e.g., fill NaNs
-                self.inventory_df['status'] = self.inventory_df['status'].fillna('Available')
+                df['status'] = df['status'].fillna('Available')
 
             # Clean and process data
-            self.inventory_df['features_list'] = self.inventory_df['features'].apply(self._parse_features)
-            self.inventory_df['body_styles_list'] = self.inventory_df['body_styles'].apply(self._parse_body_styles)
-            self.inventory_df['search_text'] = self.inventory_df.apply(self._create_search_text, axis=1)
+            df['features_list'] = df['features'].apply(self._parse_features)
+            df['body_styles_list'] = df['body_styles'].apply(self._parse_body_styles)
+            df['search_text'] = df.apply(self._create_search_text, axis=1)
             
+            self.inventory_df = df
             logger.info(f"✅ Enhanced inventory loaded successfully: {len(self.inventory_df)} vehicles")
             return True
             
         except Exception as e:
-            logger.error(f"❌ Error loading inventory: {e}")
+            logger.error(f"❌ Error loading inventory: {e}", exc_info=True)
             return False
     
     def _parse_features(self, features_str: str) -> List[str]:
@@ -126,7 +152,7 @@ class EnhancedInventoryManager:
         ]
         return ' '.join(text_parts).lower()
     
-    def intelligent_search(self, query: str, max_results: int = 10) -> List[CarSearchResult]:
+    def intelligent_search(self, query: str, max_results: int = 3) -> List[CarSearchResult]:
         """Advanced intelligent search with natural language processing"""
         if self.inventory_df is None or self.inventory_df.empty:
             logger.warning("No inventory data available for search.")
@@ -172,13 +198,10 @@ class EnhancedInventoryManager:
         
         # Extract price range
         price_patterns = [
-            r'menos de (\d+)',
-            r'bajo (\d+)',
-            r'máximo (\d+)',
-            r'hasta (\d+)',
-            r'entre (\d+) y (\d+)',
-            r'(\d+) a (\d+)',
-            r'presupuesto de (\d+)'
+            r'menos de (\d+)', r'bajo (\d+)', r'máximo (\d+)', r'hasta (\d+)',
+            r'entre (\d+) y (\d+)', r'(\d+) a (\d+)', r'presupuesto de (\d+)',
+            r'less than (\d+)', r'under (\d+)', r'max (\d+)', r'up to (\d+)',
+            r'between (\d+) and (\d+)', r'(\d+) to (\d+)', r'budget of (\d+)'
         ]
         
         for pattern in price_patterns:
@@ -191,85 +214,81 @@ class EnhancedInventoryManager:
                     criteria['max_price'] = int(match.group(2))
                 break
         
-        # Extract mileage preferences
+        # Extract mileage
         mileage_patterns = [
-            r'pocos kilómetros',
-            r'bajo kilometraje',
-            r'menos de (\d+) km',
-            r'máximo (\d+) kilómetros'
+            (r'pocos kilómetros|bajo kilometraje|low mileage|few miles', 20000),
+            (r'menos de (\d+) km', None), (r'máximo (\d+) kilómetros', None),
+            (r'less than (\d+) miles', None), (r'max (\d+) miles', None)
         ]
         
-        for pattern in mileage_patterns:
-            if re.search(pattern, query_lower):
-                if 'pocos' in pattern or 'bajo' in pattern:
-                    criteria['max_mileage'] = 20000
-                else:
-                    match = re.search(r'(\d+)', pattern)
-                    if match:
-                        criteria['max_mileage'] = int(match.group(1))
+        for pattern, default in mileage_patterns:
+            match = re.search(pattern, query_lower)
+            if match:
+                if default:
+                    criteria['max_mileage'] = default
+                elif match.groups():
+                    criteria['max_mileage'] = int(match.group(1))
                 break
         
-        # Extract colors
-        colors = ['rojo', 'negro', 'blanco', 'azul', 'gris', 'verde', 'amarillo', 'naranja']
-        for color in colors:
-            if color in query_lower:
-                criteria['color'] = color.capitalize()
+        # Extract colors (Normalizing to English as in CSV)
+        colors_map = {
+            'rojo': 'Red', 'red': 'Red',
+            'negro': 'Black', 'black': 'Black',
+            'blanco': 'White', 'white': 'White',
+            'azul': 'Blue', 'blue': 'Blue',
+            'gris': 'Gray', 'gray': 'Gray', 'grey': 'Gray',
+            'verde': 'Green', 'green': 'Green'
+        }
+        for color_key, color_val in colors_map.items():
+            if color_key in query_lower:
+                criteria['color'] = color_val
                 break
         
+        # Extract locations
+        locations = ['madrid', 'barcelona', 'valencia', 'sevilla']
+        for loc in locations:
+            if loc in query_lower:
+                criteria['location'] = loc.capitalize()
+                break
+
         # Extract body styles
         body_styles = {
             'sedan': ['sedan', 'sedán'],
-            'suv': ['suv', 'todoterreno', 'camioneta'],
-            'pickup': ['pickup', 'pick-up', 'camioneta'],
-            'hatchback': ['hatchback', 'compacto'],
-            'coupe': ['coupe', 'coupé', 'deportivo'],
-            'van': ['van', 'furgoneta', 'monovolumen']
+            'suv': ['suv', 'todoterreno', 'camioneta', 'crossover'],
+            'pickup': ['pickup', 'pick-up', 'truck'],
+            'hatchback': ['hatchback', 'compacto', 'compact'],
+            'coupe': ['coupe', 'coupé', 'deportivo', 'sport']
         }
-        
         for style, keywords in body_styles.items():
-            if any(keyword in query_lower for keyword in keywords):
+            if any(kw in query_lower for kw in keywords):
                 criteria['body_style'] = style
                 break
         
         # Extract makes
         makes = ['audi', 'bmw', 'mercedes', 'toyota', 'honda', 'ford', 'volkswagen', 
-                'nissan', 'hyundai', 'kia', 'mazda', 'subaru', 'lexus', 'acura',
-                'infiniti', 'volvo', 'cadillac', 'genesis', 'jaguar', 'land rover',
-                'porsche', 'tesla', 'aston martin', 'ferrari', 'lamborghini']
-        
+                'nissan', 'hyundai', 'kia', 'mazda', 'subaru']
         for make in makes:
             if make in query_lower:
                 criteria['make'] = make.title()
                 break
-        
-        # Extract fuel type preferences
-        fuel_types = {
-            'híbrido': ['híbrido', 'hibrido', 'hybrid'],
-            'eléctrico': ['eléctrico', 'electrico', 'electric'],
-            'gasolina': ['gasolina', 'gasoline'],
-            'diesel': ['diesel', 'diésel']
+                
+        # Extract fuel types
+        fuel_map = {
+            'hybrid': 'Hybrid', 'híbrido': 'Hybrid',
+            'electric': 'Electric', 'eléctrico': 'Electric',
+            'gasoline': 'Gasoline', 'gasolina': 'Gasoline',
+            'diesel': 'Diesel', 'diésel': 'Diesel'
         }
-        
-        for fuel_type, keywords in fuel_types.items():
-            if any(keyword in query_lower for keyword in keywords):
-                criteria['fuel_type'] = fuel_type.capitalize()
+        for fuel_key, fuel_val in fuel_map.items():
+            if fuel_key in query_lower:
+                criteria['fuel_type'] = fuel_val
                 break
-        
-        # Extract feature requirements
-        feature_keywords = {
-            'seguridad': ['seguro', 'seguridad', 'safety'],
-            'lujo': ['lujo', 'luxury', 'premium'],
-            'deportivo': ['deportivo', 'sport', 'performance'],
-            'familiar': ['familiar', 'family', 'bebé', 'niños'],
-            'maletero': ['maletero', 'trunk', 'espacio', 'carga'],
-            'tecnología': ['tecnología', 'tech', 'navegación', 'pantalla']
-        }
-        
-        criteria['required_features'] = []
-        for feature, keywords in feature_keywords.items():
-            if any(keyword in query_lower for keyword in keywords):
-                criteria['required_features'].append(feature)
-        
+                
+        # Extract specific year (4-digit number)
+        year_match = re.search(r'\b(20\d{2})\b', query_lower)
+        if year_match:
+            criteria['year'] = int(year_match.group(1))
+            
         return criteria
     
     def _apply_search_filters(self, df: pd.DataFrame, criteria: Dict[str, Any]) -> pd.DataFrame:
@@ -303,6 +322,10 @@ class EnhancedInventoryManager:
         if 'fuel_type' in criteria:
             df = df[df['fuel_type'].str.lower() == criteria['fuel_type'].lower()]
         
+        # Strict Year filter (Crucial for preventing hallucinations)
+        if 'year' in criteria:
+            df = df[df['year'] == criteria['year']]
+            
         return df
     
     def _calculate_relevance_scores(self, df: pd.DataFrame, query: str, criteria: Dict[str, Any]) -> pd.DataFrame:
@@ -324,42 +347,42 @@ class EnhancedInventoryManager:
             text_matches = sum(1 for word in query_words if word in row['search_text'])
             if text_matches > 0:
                 score += (text_matches / len(query_words)) * 30
-                reasons.append(f"Coincidencia de texto ({text_matches}/{len(query_words)} palabras)")
+                reasons.append(f"Text match ({text_matches}/{len(query_words)} words)")
             
             # Criteria matching bonuses
             if 'color' in criteria and row['color'].lower() == criteria['color'].lower():
                 score += 25
-                reasons.append(f"Color exacto: {criteria['color']}")
+                reasons.append(f"Exact color: {criteria['color']}")
             
             if 'make' in criteria and row['make'].lower() == criteria['make'].lower():
                 score += 30
-                reasons.append(f"Marca exacta: {criteria['make']}")
+                reasons.append(f"Exact make: {criteria['make']}")
             
             if 'body_style' in criteria:
                 if any(criteria['body_style'].lower() in style.lower() for style in row['body_styles_list']):
                     score += 25
-                    reasons.append(f"Tipo de carrocería: {criteria['body_style']}")
+                    reasons.append(f"Body style match: {criteria['body_style']}")
             
             # Condition bonus
-            if row['condition'] == 'Excelente':
+            if row['condition'] == 'Excellent':
                 score += 10
-                reasons.append("Condición excelente")
-            elif row['condition'] == 'Muy bueno':
+                reasons.append("Excellent condition")
+            elif row['condition'] == 'Very Good':
                 score += 5
-                reasons.append("Muy buena condición")
+                reasons.append("Very good condition")
             
             # Low mileage bonus
             if row['mileage'] < 15000:
                 score += 15
-                reasons.append("Bajo kilometraje")
+                reasons.append("Low mileage")
             elif row['mileage'] < 25000:
                 score += 10
-                reasons.append("Kilometraje moderado")
+                reasons.append("Moderate mileage")
             
             # Safety rating bonus
             if row['safety_rating'] == 5:
                 score += 10
-                reasons.append("Máxima calificación de seguridad")
+                reasons.append("Top safety rating")
             
             # Feature matching
             if 'required_features' in criteria:
@@ -367,7 +390,7 @@ class EnhancedInventoryManager:
                 for req_feature in criteria['required_features']:
                     if any(req_feature.lower() in feature.lower() for feature in row['features_list']):
                         feature_matches += 1
-                        reasons.append(f"Característica requerida: {req_feature}")
+                        reasons.append(f"Required feature: {req_feature}")
                 
                 if feature_matches > 0:
                     score += feature_matches * 15
@@ -478,7 +501,7 @@ class EnhancedInventoryManager:
         try:
             # Add status column if it doesn't exist
             if 'status' not in self.inventory_df.columns:
-                self.inventory_df['status'] = 'Disponible'
+                self.inventory_df['status'] = 'Available'
             
             # Update status
             mask = self.inventory_df['vin'] == vin
@@ -522,39 +545,39 @@ class EnhancedInventoryManager:
     def format_search_results_for_agent(self, results: List[CarSearchResult], max_display: int = 5) -> str:
         """Format search results for agent consumption"""
         if not results:
-            return "❌ No se encontraron vehículos que coincidan con los criterios de búsqueda."
+            return "❌ No vehicles were found matching the search criteria."
         
-        output = f"🎯 **Encontré {len(results)} vehículos excelentes para ti:**\n\n"
+        output = f"🎯 **I found {len(results)} excellent vehicles for you:**\n\n"
         
         for i, car in enumerate(results[:max_display], 1):
             # Price formatting
-            price_formatted = f"€{car.price:,}".replace(',', '.')
+            price_formatted = f"${car.price:,}"
             
             # Mileage formatting
-            mileage_formatted = f"{car.mileage:,} km".replace(',', '.')
+            mileage_formatted = f"{car.mileage:,} miles"
             
             # Features preview (first 3)
             features_preview = ', '.join(car.features[:3])
             if len(car.features) > 3:
-                features_preview += f" y {len(car.features) - 3} más"
+                features_preview += f" and {len(car.features) - 3} more"
             
             output += f"**{i}. {car.year} {car.make} {car.model}** ({car.body_style})\n"
             output += f"   🎨 Color: {car.color} | 📏 {mileage_formatted} | 💰 {price_formatted}\n"
-            output += f"   ⛽ {car.fuel_type} | ⭐ {car.safety_rating}/5 estrellas | 🧳 {car.trunk_space_liters}L maletero\n"
+            output += f"   ⛽ {car.fuel_type} | ⭐ {car.safety_rating}/5 stars | 🧳 {car.trunk_space_liters}L Trunk\n"
             output += f"   ✨ {features_preview}\n"
-            output += f"   📍 Ubicación: {car.location} | 🏆 Condición: {car.condition}\n"
+            output += f"   📍 Location: {car.location} | 🏆 Condition: {car.condition}\n"
             
             # Match reasons
             if car.match_reasons:
                 reasons = ', '.join(car.match_reasons[:2])
-                output += f"   🎯 **Por qué es perfecto:** {reasons}\n"
+                output += f"   🎯 **Why it matches:** {reasons}\n"
             
             output += f"   📋 VIN: `{car.vin}`\n\n"
         
         if len(results) > max_display:
-            output += f"... y {len(results) - max_display} opciones más disponibles.\n\n"
+            output += f"... and {len(results) - max_display} more options available.\n\n"
         
-        output += "💡 **¿Te interesa alguno de estos vehículos? ¡Puedo darte más detalles o programar una prueba de manejo!**"
+        output += "💡 **Are you interested in any of these vehicles? I can provide more details or schedule a test drive!**"
         
         return output
 
