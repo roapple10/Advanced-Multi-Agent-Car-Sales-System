@@ -161,6 +161,7 @@ with st.sidebar:
     databricks_base_url = st.text_input(
         "Databricks Base URL",
         value=default_databricks_base_url,
+        type="password", 
         placeholder="https://...",
         help="Databricks serving endpoint URL"
     )

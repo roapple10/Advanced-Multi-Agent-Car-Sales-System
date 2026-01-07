@@ -86,6 +86,7 @@ SERPAPI_API_KEY=your_serpapi_key_here  # Optional
 ### 4. Running the App
 
 ```bash
+cd src
 streamlit run enhanced_app.py
 ```
 
@@ -110,12 +111,13 @@ graph TD
     end
 ```
 
-### Technical Stack
-- **Agent Logic**: LangGraph / LangChain
-- **LLMs**: Databricks GPT-5 / GPT-5-1 / GPT-5-mini (via Serving Endpoints)
-- **Frontend**: Streamlit
-- **Search**: SerpAPI
-- **Data**: Pandas (CSV-based Inventory)
+### 🛠️ Technical Stack
+- **Streamlit (UI)**: Provides the interactive web application interface.
+- **LangChain (Tool, Agent)**: Orchestrates the individual agents and their specialized tools.
+- **LangGraph (DAG decision flow)**: Manages the complex multi-agent state and directed acyclic graph (DAG) decision flow.
+- **LLMs**: Powered by Databricks-hosted models for high-performance reasoning.
+- **Search**: SerpAPI for real-time market research and comparisons.
+- **Data Handling**: Pandas for efficient inventory management and CSV processing.
 
 ---
 
