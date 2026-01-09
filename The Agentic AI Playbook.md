@@ -32,9 +32,9 @@ The following diagram illustrates the sequential execution of nodes within the L
 
 ```mermaid
 graph TD
-    User([Customer Input]) --> Eddy[Eddy Node<br/>Inventory Search]
-    Eddy --> Maria[Maria Node<br/>Technical Research]
-    Maria --> Carlos[Carlos Node<br/>Sales Synthesis]
+    User([Customer Input]) --> Eddy[Inventory Search]
+    Eddy --> Maria[Technical Research]
+    Maria --> Carlos[Sales Synthesis]
     Carlos --> Output([Final Response])
 
     subgraph Data_Layer [Data Layer]
@@ -45,7 +45,7 @@ graph TD
 
 **Workflow Execution Details**
 
-1. **Eddy Node**: Analyzes the user query against the `enhanced_inventory.csv` database using the `InventoryManager`.
+1. **Eddy Node**: Analyzes the user query against the inventory data source (e.g., `enhanced_inventory.csv` or a live database) using the `InventoryManager`.
 2. **Maria Node**: Performs technical research, potentially utilizing `SerpAPI` for external market data.
 3. **Carlos Node**: Consumes the outputs from Eddy and Maria, updates the `CustomerProfile`, and generates the final natural language response.
 
@@ -180,6 +180,8 @@ sequenceDiagram
     deactivate M
 ```
 
+<img src="image/TheAgenticAIPlaybook/1767930110822.png" alt="1767930110822" width="500" />
+
 ---
 
 ## 4. Building the Graph (Orchestration Code)
@@ -267,6 +269,8 @@ graph TD
 1. **Inter-Agent Communications**: A dedicated toggle in the UI (`show_agent_comms`) allows visibility into the raw messages exchanged between Eddy, Maria, and Carlos.
 2. **System Logs**: Detailed logs track tool calls and sales stage transitions.
 3. **Conversation Analytics**: Tracks total interactions, communication frequency, and customer profile completeness.
+
+![1767930231605](image/TheAgenticAIPlaybook/1767930231605.png)
 
 ---
 
